@@ -1,0 +1,20 @@
+
+        Char Font Lock
+        ==============
+
+This is a demo of Char Font Lock, a package for highlighting odd
+characters like misplaced whitespace and non-ASCII characters.
+
+	This line is indented with an OK tab.
+
+	At the end of this line are some spaces.   
+
+ 	The tab on this line is preceeded with a space.
+
+	This paragraph contains odd characters, the three swedish
+	letters å, ä, and ö.
+
+
+;; Local variables:
+;; indent-tabs-mode: t
+;; end:
