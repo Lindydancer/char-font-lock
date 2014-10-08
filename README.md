@@ -1,7 +1,7 @@
 # char-font-lock - Highlight bad whitespace and out-of-place characters
 
 *Author:* Anders Lindgren<br>
-*Version:* 0.0.0<br>
+*Version:* 0.0.1<br>
 *URL:* [https://github.com/Lindydancer/char-font-lock](https://github.com/Lindydancer/char-font-lock)<br>
 
 
@@ -27,22 +27,12 @@ Currently, the following are highlighted:
   a font-lock keyword, instead the built-in feature
   `show-trailing-whitespace` is used.)
 
-## Usage
+## Installation
 
-Place the source file in a directory in the load path. Add the
-following lines to an appropriate init file:
+This package is designed to be installed as a "package". Once
+installed, it is automatically activated.
 
-       (require 'char-font-lock)
-
-Activate this package by Customize, or by placing the following line
-into the appropriate init file:
-
-       (char-font-lock-global-mode 1)
-
-This package use Font Lock mode, so `font-lock-mode` or
-`global-font-lock-mode` must be enabled (which it is by default).
-
-### Customization
+## Customization
 
 The following variables can be modified to fine-tune Char Font Lock:
 
@@ -68,7 +58,15 @@ this package:
 
 ![See doc/demo.png for screenshot of Char Font Lock mode](doc/demo.png)
 
+## Supported Emacs Versions
+
+This package is primarily for Emacs 24.4. However, with the help of
+the companion package [old-emacs-support][1] it can be used with
+earlier Emacs versions, at least from Emacs 22.
+
+[1]: https://github.com/Lindydancer/old-emacs-support
+
 
 
 ---
-Converted from `char-font-lock.el` by [*el2markup*](https://github.com/Lindydancer/el2markdown).
+Converted from `char-font-lock.el` by [*el2markdown*](https://github.com/Lindydancer/el2markdown).

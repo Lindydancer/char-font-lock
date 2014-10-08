@@ -12,7 +12,7 @@ characters like misplaced whitespace and non-ASCII characters.
  	The tab on this line is preceeded with a space.
 
 	This paragraph contains odd characters, the three swedish
-	letters å, ä, and ö.
+	letters Ã¥, Ã¤, and Ã¶.
 
 
 ;; Local variables:

@@ -1,11 +1,13 @@
-;;; char-font-lock.el -- Highlight bad whitespace and out-of-place characters.
+;;; char-font-lock.el --- Highlight bad whitespace and out-of-place characters.
 
 ;; Copyright (C) 2014 Anders Lindgren
 
 ;; Author: Anders Lindgren
 ;; Keywords: languages, faces
-;; Version: 0.0.0
+;; Created: 2014-03-03
+;; Version: 0.0.1
 ;; URL: https://github.com/Lindydancer/char-font-lock
+;; Package-Requires: ((old-emacs-support "0.0.2"))
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -50,21 +52,11 @@
 ;;   a font-lock keyword, instead the built-in feature
 ;;   `show-trailing-whitespace' is used.)
 
-;; Usage:
+;; Installation:
 ;;
-;; Place the source file in a directory in the load path. Add the
-;; following lines to an appropriate init file:
-;;
-;;    (require 'char-font-lock)
-;;
-;; Activate this package by Customize, or by placing the following line
-;; into the appropriate init file:
-;;
-;;    (char-font-lock-global-mode 1)
-;;
-;; This package use Font Lock mode, so `font-lock-mode' or
-;; `global-font-lock-mode' must be enabled (which it is by default).
-;;
+;; This package is designed to be installed as a "package". Once
+;; installed, it is automatically activated.
+
 ;; Customization:
 ;;
 ;; The following variables can be modified to fine-tune Char Font Lock:
@@ -92,16 +84,25 @@
 ;;
 ;; ![See doc/demo.png for screenshot of Char Font Lock mode](doc/demo.png)
 
+;; Supported Emacs Versions:
+;;
+;; This package is primarily for Emacs 24.4. However, with the help of
+;; the companion package [old-emacs-support][1] it can be used with
+;; earlier Emacs versions, at least from Emacs 22.
+;;
+;; [1]: https://github.com/Lindydancer/old-emacs-support
+
 ;;}}}
 
 ;;; Code:
 
 ;;{{{ Dependencies
 
-(eval-when-compile
-  (require 'cl))
+;; Load backward compatibility package, if present.
+(require 'old-emacs-support nil t)
 
 ;;}}}
+
 ;;{{{ Variables
 
 (defgroup char-font-lock nil
@@ -126,6 +127,7 @@
 (defvar char-font-lock-nonascii-face 'trailing-whitespace)
 
 
+;;;###autoload
 (defcustom char-font-lock-modes
   '(prog-mode
     text-mode)
@@ -165,25 +167,37 @@ list is traversed in order.")
 ;;}}}
 ;;{{{ The modes
 
+;; Note: Broken out from `define-minor-mode char-font-lock' to reduce
+;; the amount of code placed in the package autoload file.
 ;;;###autoload
-(define-minor-mode char-font-lock-mode
-  "Minor mode that highlight bad whitespace and out-of-place characters."
-  nil
-  nil
-  nil
-  :group 'char-font-lock
+(defun char-font-lock-mode-enable-or-disable ()
+  "Enable or disable Char Font Lock Mode."
   (if char-font-lock-mode
-      (char-font-lock-font-lock-add-keywords)
-    (char-font-lock-font-lock-remove-keywords))
-  (when font-lock-mode
-    (font-lock-fontify-buffer)))
+      (char-font-lock-add-keywords)
+    (char-font-lock-remove-keywords))
+  (font-lock-flush))
+
+
+;; Note: Without the "progn", plain autoloads for the functions,
+;; rather than the full call to the define functions, are placed in
+;; the generated autoload file, when installed as a package.
 
 ;;;###autoload
-(define-global-minor-mode char-font-lock-global-mode char-font-lock-mode
-  (lambda ()
-    (when (apply 'derived-mode-p char-font-lock-modes)
-      (char-font-lock-mode 1)))
-  :group 'char-font-lock)
+(progn
+  (define-minor-mode char-font-lock-mode
+    "Minor mode that highlights bad whitespace and out-of-place characters."
+    :group 'char-font-lock
+    (char-font-lock-mode-enable-or-disable))
+
+  (define-global-minor-mode char-font-lock-global-mode char-font-lock-mode
+    (lambda ()
+      (when (apply 'derived-mode-p char-font-lock-modes)
+        (char-font-lock-mode 1)))
+    :group 'char-font-lock
+    :init-value t)
+
+  (when char-font-lock-global-mode
+    (char-font-lock-global-mode 1)))
 
 ;;}}}
 ;;{{{ Match functions
@@ -247,38 +261,63 @@ list is traversed in order.")
       t)))
 
 
+;; Note: Modern Emacs versions provide similar functions named cl-xyz
+;; in `cl-lib' whereas older provide `xzy' in `cl'. To avoid thid
+;; debacle, this package provide their own union and difference
+;; functions.
+
+(defun char-font-lock-union (list1 list2)
+  "Return list with elemets in either LIST1 or LIST2."
+  (dolist (element list2)
+    (unless (memq element list1)
+      (push element list1)))
+  list1)
+
+
+(defun char-font-lock-difference (list1 list2)
+  "Return list with elemets in either LIST1 but not LIST2."
+  (let ((res '()))
+    (dolist (element list1)
+      (unless (memq element list2)
+        (push element res)))
+    res))
+
+
 (defun char-font-lock-enabled-features ()
   "Return list of enables features in current buffer."
-  (let ((features char-font-lock-all-features))
+  ;; WARNING: Don't use a local variable named "features", it collides
+  ;; with a global variable, which triggers an error when "union" and
+  ;; "set-difference" pulls in the library `cl-seq'.
+  (let ((enabled char-font-lock-all-features))
     (dolist (entry char-font-lock-enabled-features-list)
       (let ((mode (nth 0 entry))
             (spec (nth 1 entry)))
         (when (derived-mode-p (car entry))
           (cond ((eq (car-safe spec) '+)
-                 (setq features (union features (cdr spec))))
+                 (setq enabled (char-font-lock-union enabled (cdr spec))))
                 ((eq (car-safe spec) '-)
-                 (setq features (set-difference features (cdr spec))))
+                 (setq enabled (char-font-lock-difference enabled (cdr spec))))
                 (t
-                 (setq features spec))))))
-    features))
+                 (setq enabled spec))))))
+    enabled))
 
 
 (defun char-font-lock-keywords ()
-  (let ((features (char-font-lock-enabled-features))
+  (let ((enabled-features (char-font-lock-enabled-features))
         (res '()))
-    (when (memq 'ok-tab features)
+    (when (memq 'ok-tab enabled-features)
       (push '(char-font-lock-match-ok-tab
               (0 char-font-lock-ok-tab-face))
             res))
-    (when (memq 'bad-tab features)
+    (when (memq 'bad-tab enabled-features)
       (push '(char-font-lock-match-bad-tab
               (0 char-font-lock-bad-tab-face))
             res))
-    (when (memq 'nonascii features)
+    (when (memq 'nonascii enabled-features)
       (push '("[[:nonascii:]]+"
               (0 char-font-lock-nonascii-face append))
             res))
-    (when (memq 'end-of-file-whitespace features)
+    (when (memq 'end-of-file-whitespace enabled-features)
       ;; Note: Reverse order, the `prepare' rules is executed first.
       (push '(char-font-lock-match-empty-lines-at-eob
               ("\n"
@@ -286,7 +325,7 @@ list is traversed in order.")
                (goto-char (match-end 0))
                (0 char-font-lock-bad-tab-face append)))
             res))
-    (when (memq 'missing-end-of-file-newline features)
+    (when (memq 'missing-end-of-file-newline enabled-features)
       (push '(char-font-lock-match-missing-new-line-at-eob
               (0 char-font-lock-bad-tab-face append))
             res))
@@ -297,11 +336,16 @@ list is traversed in order.")
 (defvar char-font-lock--show-trailing-whitespace nil)
 
 
-(defun char-font-lock-font-lock-add-keywords ()
+(defun char-font-lock-add-keywords ()
   "Install Char Font Lock mode keywords into current buffer."
-  (let ((keywords (char-font-lock-keywords)))
+  ;; This test ensures that the original value is not overwritten if
+  ;; this function is called when Char Font Lock already is active.
+  (unless (local-variable-p 'char-font-lock--show-trailing-whitespace)
     (set (make-local-variable 'char-font-lock--show-trailing-whitespace)
-         show-trailing-whitespace)
+         show-trailing-whitespace))
+  (when (local-variable-p 'char-font-lock--installed-keywords)
+    (font-lock-remove-keywords nil char-font-lock--installed-keywords))
+  (let ((keywords (char-font-lock-keywords)))
     (set (make-local-variable 'char-font-lock--installed-keywords) keywords)
     (when (memq 'end-of-line-whitespace (char-font-lock-enabled-features))
       (setq show-trailing-whitespace t))
@@ -309,9 +353,10 @@ list is traversed in order.")
     (font-lock-add-keywords nil keywords t)))
 
 
-(defun char-font-lock-font-lock-remove-keywords ()
+(defun char-font-lock-remove-keywords ()
   "Remove Char Font Lock mode keywords in current buffer."
   (setq show-trailing-whitespace char-font-lock--show-trailing-whitespace)
+  (kill-local-variable 'char-font-lock--show-trailing-whitespace)
   (font-lock-remove-keywords nil char-font-lock--installed-keywords))
 
 

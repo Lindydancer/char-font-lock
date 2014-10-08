@@ -1,0 +1,5 @@
+«:char-font-lock-ok-tab:	»A correct tab starts this line.
+«:char-font-lock-ok-tab:	»This is a«:trailing-whitespace:	»bad tab.
+«:char-font-lock-ok-tab:	»End of line whitespace.  
+The three swedish characters «:trailing-whitespace:å», «:trailing-whitespace:ä», and «:trailing-whitespace:ö».
+«:trailing-whitespace:No newline on this line:»

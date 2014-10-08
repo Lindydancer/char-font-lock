@@ -1,0 +1,5 @@
+	A correct tab starts this line.
+	This is a	bad tab.
+	End of line whitespace.  
+The three swedish characters å, ä, and ö.
+No newline on this line:
