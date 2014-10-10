@@ -18,14 +18,20 @@
 
 ;;; Code:
 
-(add-to-list 'load-path (expand-file-name "../../faceup"))
-
-(load-file "../char-font-lock.el")
-(char-font-lock-global-mode 1)
-
-(load-file "char-font-lock-test-files.el")
-
 (setq inhibit-startup-screen t)
+(prefer-coding-system 'utf-8)
+
+(defvar char-font-lock-test-setup-directory
+  (if load-file-name
+      (file-name-directory load-file-name)
+    default-directory))
+
+(dolist (dir '("." ".." "../../old-emacs-support" "../../faceup"))
+  (add-to-list 'load-path (concat char-font-lock-test-setup-directory dir)))
+
+(require 'char-font-lock)
+(require 'char-font-lock-test-files)
+
 (ert t)
 
 ;;; char-font-lock-test-setup.el ends here

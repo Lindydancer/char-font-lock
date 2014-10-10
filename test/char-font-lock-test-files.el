@@ -46,8 +46,10 @@ FILE is interpreted as relative to this source directory."
 (faceup-defexplainer char-font-lock-test-file)
 
 
-(ert-deftest char-font-lock-file-test ()
+(ert-deftest char-font-lock-test-files ()
   (should (char-font-lock-test-file "files/test.txt"))
   (should (char-font-lock-test-file "files/test2.txt")))
+
+(provide 'char-font-lock-test-files)
 
 ;; char-font-lock-test-files.el ends here.

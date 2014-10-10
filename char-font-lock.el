@@ -5,7 +5,7 @@
 ;; Author: Anders Lindgren
 ;; Keywords: languages, faces
 ;; Created: 2014-03-03
-;; Version: 0.0.1
+;; Version: 0.0.2
 ;; URL: https://github.com/Lindydancer/char-font-lock
 ;; Package-Requires: ((old-emacs-support "0.0.2"))
 
@@ -101,6 +101,9 @@
 ;; Load backward compatibility package, if present.
 (require 'old-emacs-support nil t)
 
+(unless (fboundp 'font-lock-flush)
+  (error "Either use a newer Emacs or install old-emacs-support"))
+
 ;;}}}
 
 ;;{{{ Variables
@@ -163,41 +166,6 @@ prepended with a `+', the features are added to the current set
 of features, when prepended with a `-', they are removed. The
 list is traversed in order.")
 
-
-;;}}}
-;;{{{ The modes
-
-;; Note: Broken out from `define-minor-mode char-font-lock' to reduce
-;; the amount of code placed in the package autoload file.
-;;;###autoload
-(defun char-font-lock-mode-enable-or-disable ()
-  "Enable or disable Char Font Lock Mode."
-  (if char-font-lock-mode
-      (char-font-lock-add-keywords)
-    (char-font-lock-remove-keywords))
-  (font-lock-flush))
-
-
-;; Note: Without the "progn", plain autoloads for the functions,
-;; rather than the full call to the define functions, are placed in
-;; the generated autoload file, when installed as a package.
-
-;;;###autoload
-(progn
-  (define-minor-mode char-font-lock-mode
-    "Minor mode that highlights bad whitespace and out-of-place characters."
-    :group 'char-font-lock
-    (char-font-lock-mode-enable-or-disable))
-
-  (define-global-minor-mode char-font-lock-global-mode char-font-lock-mode
-    (lambda ()
-      (when (apply 'derived-mode-p char-font-lock-modes)
-        (char-font-lock-mode 1)))
-    :group 'char-font-lock
-    :init-value t)
-
-  (when char-font-lock-global-mode
-    (char-font-lock-global-mode 1)))
 
 ;;}}}
 ;;{{{ Match functions
@@ -359,6 +327,41 @@ list is traversed in order.")
   (kill-local-variable 'char-font-lock--show-trailing-whitespace)
   (font-lock-remove-keywords nil char-font-lock--installed-keywords))
 
+
+;;}}}
+;;{{{ The modes
+
+;; Note: Broken out from `define-minor-mode char-font-lock' to reduce
+;; the amount of code placed in the package autoload file.
+;;;###autoload
+(defun char-font-lock-mode-enable-or-disable ()
+  "Enable or disable Char Font Lock Mode."
+  (if char-font-lock-mode
+      (char-font-lock-add-keywords)
+    (char-font-lock-remove-keywords))
+  (font-lock-flush))
+
+
+;; Note: Without the "progn", plain autoloads for the functions,
+;; rather than the full call to the define functions, are placed in
+;; the generated autoload file, when installed as a package.
+
+;;;###autoload
+(progn
+  (define-minor-mode char-font-lock-mode
+    "Minor mode that highlights bad whitespace and out-of-place characters."
+    :group 'char-font-lock
+    (char-font-lock-mode-enable-or-disable))
+
+  (define-global-minor-mode char-font-lock-global-mode char-font-lock-mode
+    (lambda ()
+      (when (apply 'derived-mode-p char-font-lock-modes)
+        (char-font-lock-mode 1)))
+    :group 'char-font-lock
+    :init-value t)
+
+  (when char-font-lock-global-mode
+    (char-font-lock-global-mode 1)))
 
 ;;}}}
 
